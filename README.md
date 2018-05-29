@@ -8,8 +8,8 @@ Sistema para controle de toque escolar (sineta/sirene) baseado em arduino com us
 * Servidor NTP (local ou da Internet)
 
 **Gerenciamento opcional com Zabbix e Grafana:**
-
-![Zabbix-Toque](iFToque-Thumb.png)
+![Diagrama de funcionamento](iFtoque-ToqueIFRN-SPP-DiagramaFuncionamento-High.png)
+![Zabbix-Toque com Zabbix/Grafana](iFToque-Thumb.png)
 
 **Arquivo userparameter no Zabbix Server**
 
