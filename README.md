@@ -1,5 +1,6 @@
 # iF-toque
-Sistema para controle de toque escolar (sineta/sirene) baseado em arduino com uso de reles com atualização de hora pela rede através de protocolo NTP.
+Sistema para controle de toque escolar (sineta/sirene) baseado em arduino com uso de rele com atualização de hora pela rede através de protocolo NTP.
+As horas dos toques ficam no código fonte na função timeToStudy() e são separadas por toque longo ou toque curto. O toque curto é utilizado quando não há intervalos entre as aulas e dura por padrão 3s. O toque longo dura por padrão 7 segundos (horário do inicio ou fim do intervalo, inicio de turno, etc). Feriados fixos estão definos na função DiadeAula () que retorna para timeToStudy() se o toque deve ser acionado ou não.
 
 **Utilizado:**
 * Arduino Uno
