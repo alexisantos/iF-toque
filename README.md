@@ -14,7 +14,7 @@ O servidor web é utilizado como gerenciamento passivo do dispositivo para acomp
 ![Diagrama de funcionamento](iFtoque-ToqueIFRN-SPP-DiagramaFuncionamento-High.png)
 
 **Gerenciamento opcional com Zabbix e Grafana:**
-![Zabbix-Toque com Zabbix/Grafana](iFToque-Thumb.png)
+![Zabbix-Toque com Zabbix/Grafana](iFToque-Grafana-Integracao.png)
 
 **Arquivo userparameter no Zabbix Server**
 
