@@ -13,10 +13,8 @@ O servidor web é utilizado como gerenciamento passivo do dispositivo para acomp
 
 ![Diagrama de funcionamento](iFtoque-ToqueIFRN-SPP-DiagramaFuncionamento2.png)
 
-**Gerenciamento opcional com Zabbix e Grafana:**
-![Zabbix-Toque com Zabbix/Grafana](iFToque-Grafana-Integracao.png)
-
 **Retorno de requisição http**
+
 Uma requisição http irá retornar um documento json
 ```
 {
@@ -50,3 +48,8 @@ Uma requisição http irá retornar um documento json
   }
 }
 ```
+**Gerenciamento opcional com Zabbix e Grafana:**
+
+Os dados json podem ser utilizados para exibição em outras plataformas.
+
+![Zabbix-Toque com Zabbix/Grafana](iFToque-Grafana-Integracao.png)
