@@ -1,28 +1,29 @@
-boolean DiadeAula () {
-  byte mes = month();
-  byte dia = day();
-  byte diaAula = true;
-
-  if ((weekday() == 1 || weekday() == 7)) // Sem aulas nos domingos (1) ou sabados (7)
-    diaAula = false;
-
-  if (diaAula) {                 // Sem aulas nos feriados
-    if (mes == 1 && (dia == 1 || dia == 25))   // Feriado confrat. universal e feriado municipal em Sâo Paulo do Potengi
-      diaAula = false;
-    if (mes == 4 && dia == 21)                 // Feriado tiradentes
-      diaAula = false;
-    if (mes == 5 && dia == 1)                  // Feriado dia do trabalhador
-      diaAula = false;
-    if (mes == 7 && dia == 7)                  // Feriado de independencia
-      diaAula = false;
-    if (mes == 10 && (dia == 3 || dia == 12))  // Feriados martires RN, NS Aparecida
-      diaAula = false;
-    if (mes == 11 && (dia == 2 || dia == 15))  // Feriados finados e republica
-      diaAula = false;
-    if (mes == 12 && (dia == 25 || dia == 30)) // Feriado de Natal e feriado municipal de São Paulo do Potengi
-      diaAula = false;
+unsigned long getTime() {
+  if (!getLocalTime(&timeinfo)) {
+    //Serial.println("Failed to obtain time");
+    return(0);
   }
-  return diaAula;
+  time(&agora);
+  return agora;
+}
+
+void timeSyncCallback(struct timeval *tv)
+{
+  Serial.println("\n----Time Sync-----");
+  Serial.println(tv->tv_sec);
+  Serial.println(ctime(&tv->tv_sec));
+  doc["ntp"]["ultima_sincr_unixtime"]  = tv->tv_sec;
+}
+
+void Uptime(){
+  if ( millis() - prevMillis > 1000 ) {
+     prevMillis += 1000;
+     locUpTime += 100;
+     Serial.println("");
+     Serial.print(WiFi.localIP());
+     Serial.print(" | ");
+     Serial.println(WiFi.macAddress());
+  }
 }
 
 boolean timeToStudy(byte hora, byte minuto, byte segundo) {
@@ -72,12 +73,89 @@ boolean timeToStudy(byte hora, byte minuto, byte segundo) {
   return false;
 }
 
+boolean DiadeAula () {
+  byte mes = timeinfo.tm_mon + 1;
+  byte dia = timeinfo.tm_mday;
+  byte diasemana = timeinfo.tm_wday + 1;
+  byte diaAula = true;
+
+  if ((diasemana == 1 || diasemana == 7)) // Sem aulas nos domingos (1) ou sabados (7)
+    diaAula = false;
+
+  if (diaAula) {                 // Sem aulas nos feriados
+    if (mes == 1 && (dia == 1 || dia == 25) || dia == 16)   // Feriado confrat. universal e feriados municipais em Sâo Paulo do Potengi
+      diaAula = false;
+    if (mes == 4 && dia == 21)                 // Feriado tiradentes
+      diaAula = false;
+    if (mes == 5 && dia == 1)                  // Feriado dia do trabalhador
+      diaAula = false;
+    if (mes == 7 && dia == 7)                  // Feriado de independencia
+      diaAula = false;
+    if (mes == 10 && (dia == 3 || dia == 12))  // Feriados martires RN, NS Aparecida
+      diaAula = false;
+    if (mes == 11 && (dia == 2 || dia == 15))  // Feriados finados e republica
+      diaAula = false;
+    if (mes == 12 && (dia == 25 || dia == 30)) // Feriado de Natal e feriado municipal de São Paulo do Potengi
+      diaAula = false;
+  }
+  return diaAula;
+}
+
+time_t HoraEpoch(byte hh, byte mm) {
+  time_t rawtime;
+  struct tm *infodatahora;
+  time(&rawtime);
+  infodatahora = localtime(&rawtime);
+  infodatahora -> tm_hour = hh;
+  infodatahora -> tm_min = mm;
+  infodatahora -> tm_sec = 0;
+  return mktime(infodatahora);         //converte a hora da estrutura tm para o tipo time_t (epoch time)
+}
+
+void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info){
+  Serial.println("Connected to AP successfully!");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+  Serial.print("RRSI: ");
+  Serial.println(WiFi.RSSI());
+}
+
+void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info){
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+  Serial.print("RRSI: ");
+  Serial.println(WiFi.RSSI());
+}
+
+void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info){
+  delay(1000);
+  Serial.println("Disconnected from WiFi access point");
+  Serial.print("WiFi lost connection. Reason: ");
+  Serial.println(info.disconnected.reason);
+  Serial.println("Trying to Reconnect");
+  Serial.println(WiFi.macAddress());
+  WiFi.begin(ssid, password);
+}
+
+String diaSemana(byte dia) {
+  String str[] = {"-", "Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"};
+  return str[dia];
+}
+
+
+String Printzero(byte a) {
+  if (a >= 10) {
+    return (String)a + "";
+  }
+  else {
+    return "0" + (String)a;
+  }
+}
 void Imprime_Info_DataHora_Serial(){
-  if (now() != prevDisplay) { //update the display only if time has changed
-      prevDisplay = now();
-      Serial.print(digitalClockDisplayStringData(weekday(), day(), month(), year()));
-      Serial.print(F(" | "));
-      Serial.println(digitalClockDisplayStringHora(hour(), minute(), second()));
+  if (getTime() != prevDisplay) { //update the display only if time has changed
+      prevDisplay = getTime();
+      printLocalTime();
       Serial.print(F("Aula atual: "));
       Serial.print(AulaAtualNum());
       Serial.print(F(" | "));
@@ -101,20 +179,12 @@ void Imprime_Info_DataHora_Serial(){
   }
 }
 
-time_t HoraEpoch(byte hh, byte mm) {
-  tmToque.Year = year() - 1970;
-  tmToque.Month = month();
-  tmToque.Day = day();
-  tmToque.Hour = hh;
-  tmToque.Minute = mm;
-  tmToque.Second = 0;
-  return makeTime(tmToque);         //converte a hora da estrutura tmElements_t para o tipo time_t (epoch time)
-}
-
 byte AulaAtualNum () {
   // retorna o horario atual da aula.
   // Retorna 0 caso fora de horario de aula e 10 ou 20 para indicar primeiro ou segundo intervalo
-  unsigned long hora = now();
+  unsigned long hora = getTime();
+
+ 
   byte aula = 0;
   if (turno == 1) {        //Manhã: hora entre (00:00:00 e 12:00:00)
     if (hora >= HoraEpoch(7, 0)) { //Turno matutino (7:00 ~ 11:59)
@@ -191,7 +261,7 @@ String AulaStr (byte aula, byte opcao) {
     if (aula == 0)
       s = "Troca de turno";
   } else {
-    if ((turno == 3) && (opcao == 1) && (now() > HoraEpoch(21, 25))) {
+    if ((turno == 3) && (opcao == 1) && (getTime() > HoraEpoch(21, 25))) {
       s = "Amanhã";
     } else {
       for (i = 1; i <= aula; i++) {
@@ -203,7 +273,7 @@ String AulaStr (byte aula, byte opcao) {
 }
 
 byte ProximaAula (byte aula_atual) {
-  unsigned long hora = now();
+  unsigned long hora = getTime();
   byte proxaula = 0;
   if (turno != 3) {
     if (aula_atual >= 6) {    //verifica horario de aula atual (0-6) ou (10, 20,30) caso intervalo
@@ -245,7 +315,7 @@ String HorarioAulaStr (byte aula, byte opcao) {
   if (turno == 1) {
     if ((aula > 0) && (aula <= 6)) {
       if (opcao == 1) {
-        if ((now() < HoraEpoch(11, 15)))
+        if ((getTime() < HoraEpoch(11, 15)))
           s = manha[aula];
         else
           s = tarde[1];    // se a consulta eh para o próximo horario (amanha)
@@ -268,7 +338,7 @@ String HorarioAulaStr (byte aula, byte opcao) {
   if (turno == 2) {
     if ((aula > 0) && (aula <= 6)) {
       if (opcao == 1) {
-        if ((now() < HoraEpoch(17, 15)))
+        if ((getTime() < HoraEpoch(17, 15)))
           s = tarde[aula];
         else
           s = noite[1];    // se a consulta eh para o próximo horario (amanha)
@@ -290,7 +360,7 @@ String HorarioAulaStr (byte aula, byte opcao) {
   if (turno == 3) {
     if ((aula > 0) && (aula <= 4)) {
       if (opcao == 1) {
-        if ((now() < HoraEpoch(21, 25))) {
+        if ((getTime() < HoraEpoch(21, 25))) {
           s = noite[aula];
         }
         else {
@@ -306,7 +376,7 @@ String HorarioAulaStr (byte aula, byte opcao) {
           s = "";
         else {
           s = noite[1];
-          if (now() >= HoraEpoch(22, 15))
+          if (getTime() >= HoraEpoch(22, 15))
             manha[1];
         }
       } else {
@@ -322,8 +392,8 @@ String HorarioAulaStr (byte aula, byte opcao) {
 
 
 byte Turno() {
-  if (isPM()) {
-    if (hour() >= 18)
+  if (timeinfo.tm_hour >= 12) {
+    if (timeinfo.tm_hour >= 18)
       turno = 3;
     else
       turno = 2;
@@ -354,70 +424,72 @@ String TurnoStrRange() {
 time_t TempoProxAula() {
   time_t timeStampDif;
   boolean amanha = false;
+  int hora;
+  int minuto;
 
   if (turno == 1) {
     switch (proxAula) {
       case 1:
-        if ( (atualAula == 0) && ((now() < HoraEpoch(7, 0) ))) {
-          tmToque.Hour = 7; tmToque.Minute = 0;
+        if ( (atualAula == 0) && (getTime() < HoraEpoch(7, 0) )) {
+          hora = 7; minuto = 0;
         } else {
-          tmToque.Hour = 13; tmToque.Minute = 0;
+          hora = 13; minuto = 0;
         }
         break;
       case 2:
-        tmToque.Hour = 7; tmToque.Minute = 45; break;
+        hora = 7; minuto = 45; break;
       case 3:
-        tmToque.Hour = 8; tmToque.Minute = 50; break;
+        hora = 8; minuto = 50; break;
       case 4:
-        tmToque.Hour = 9; tmToque.Minute = 35; break;
+        hora = 9; minuto = 35; break;
       case 5:
-        tmToque.Hour = 10; tmToque.Minute = 30; break;
+        hora = 10; minuto = 30; break;
       case 6:
-        tmToque.Hour = 11; tmToque.Minute = 15; break;
+        hora = 11; minuto = 15; break;
     }
   } else if (turno == 2) {
     switch (proxAula) {
       case 1:
-        if ( (atualAula == 0) && ((now() < HoraEpoch(13, 0) ))) {
-          tmToque.Hour = 13; tmToque.Minute = 0;
+        if ( (atualAula == 0) && ((getTime() < HoraEpoch(13, 0) ))) {
+          hora = 13; minuto = 0;
         } else {
-          tmToque.Hour = 19; tmToque.Minute = 0;
+          hora = 19; minuto = 0;
         }
         break;
       case 2:
-        tmToque.Hour = 13; tmToque.Minute = 45; break;
+        hora = 13; minuto = 45; break;
       case 3:
-        tmToque.Hour = 14; tmToque.Minute = 50; break;
+        hora = 14; minuto = 50; break;
       case 4:
-        tmToque.Hour = 15; tmToque.Minute = 35; break;
+        hora = 15; minuto = 35; break;
       case 5:
-        tmToque.Hour = 16; tmToque.Minute = 30; break;
+        hora = 16; minuto = 30; break;
       case 6:
-        tmToque.Hour = 17; tmToque.Minute = 15; break;
+        hora = 17; minuto = 15; break;
     }
   } else if (turno == 3) {
     switch (proxAula) {
       case 1:
-        if ( (atualAula == 0) && ((now() < HoraEpoch(19, 0) ))) {
-          tmToque.Hour = 19; tmToque.Minute = 0;
+        if ( (atualAula == 0) && ((getTime() < HoraEpoch(19, 0) ))) {
+          hora = 19; minuto = 0;
         } else {
-          tmToque.Hour = 7;  tmToque.Minute = 0;
+          hora = 7;  minuto = 0;
           amanha = true;
         }
         break;
       case 2:
-        tmToque.Hour = 19; tmToque.Minute = 15; break;
+        hora = 19; minuto = 45; break;
       case 3:
-        tmToque.Hour = 20; tmToque.Minute = 40; break;
+        hora = 20; minuto = 40; break;
       case 4:
-        tmToque.Hour = 21; tmToque.Minute = 25; break;
+        hora = 21; minuto = 25; break;
     }
   }
   if (amanha) {
-    timeStampDif = ( ( HoraEpoch(tmToque.Hour, tmToque.Minute) - now()) + nextMidnight(now() ) );
+    timeStampDif = ( ( HoraEpoch(hora, minuto) - getTime()) + nextMidnight(getTime() ) );
   }
   else {
-    timeStampDif = ( ( HoraEpoch(tmToque.Hour, tmToque.Minute) - now()) + previousMidnight(now() ) );
+    timeStampDif = ( ( HoraEpoch(hora, minuto) - getTime()) + previousMidnight(getTime() ) );
   }
 
   breakTime(timeStampDif, tmRestante); // Desmembra a hora do tipo t_time para uma estrutura tmElements_t (tmRestante) contendo: hh/mm/ss...
@@ -425,172 +497,79 @@ time_t TempoProxAula() {
 
 }
 
+void ServidorWeb(){
+  char datacompleta[100];
+  
+  String saidajson = "";
+  WiFiClient client = server.available();   // listen for incoming clients
 
-String digitalClockDisplayStringHora(byte hh, byte mm, byte ss) {
-  return Printzero(hh) + ":" + Printzero(mm) + ":" + Printzero(ss);
-}
+  if (client) {                             // if you get a client,
+    doc["sistema"]["rssi"] = WiFi.RSSI();
+    doc["sistema"]["uptime"] = locUpTime;
+    strftime(datacompleta,80, "%A, %B %d %Y %H:%M:%S", &timeinfo);
+    doc["ntp"]["datahora"] = datacompleta;
+    doc["ntp"]["unixtime"] = getTime();
+    doc["horarios_aula"]["dia_aula"] = DiadeAula ();
+    doc["horarios_aula"]["aula_atual"]["num"] = AulaAtualNum();
+    doc["horarios_aula"]["aula_atual"]["horario"] = HorarioAulaStr(atualAula, 0);
+    doc["horarios_aula"]["aula_atual"]["turno"] = Turno();
+    doc["horarios_aula"]["aula_atual"]["turno_str"] = TurnoStr();
+    doc["horarios_aula"]["prox_aula"]["num"] = ProximaAula(atualAula);
+    doc["horarios_aula"]["prox_aula"]["horario"] = HorarioAulaStr(proxAula, 0);
+    doc["horarios_aula"]["prox_aula"]["tempo_restante"]["str"] = String(tmRestante.Hour) + "h " + String(tmRestante.Minute) + "m " + String(tmRestante.Second) + "s";
+    doc["horarios_aula"]["prox_aula"]["tempo_restante"]["unixtime"] = TempoProxAula();
 
-String digitalClockDisplayStringData(byte wday, byte DD, byte MM, int YYYY) {
-  return diaSemana(wday) + ", " + Printzero(DD) + "/" + Printzero(MM) + "/" + (YYYY);
-}
+    doc["data_hora"]["dia_semana_data"] = diaSemana(timeinfo.tm_wday+1) + ", " + Printzero(timeinfo.tm_mday) + "/" + Printzero(timeinfo.tm_mon+1) + "/" + String(1900 + timeinfo.tm_year);
+    doc["data_hora"]["dia_semana_str"] = diaSemana(timeinfo.tm_wday+1);
+    doc["data_hora"]["dia_semana_int"] = timeinfo.tm_wday+1;
+    doc["data_hora"]["data"] = Printzero(timeinfo.tm_mday) + "/" + Printzero(timeinfo.tm_mon+1) + "/" + String(1900 + timeinfo.tm_year);
+    doc["data_hora"]["hora"] = Printzero(timeinfo.tm_hour) + ":" + Printzero(timeinfo.tm_min) + ":" + Printzero(timeinfo.tm_sec);
 
-String diaSemana(byte dia) {
-  String str[] = {"-", "Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"};
-  return str[dia];
-}
+    delay(5);
+    
+    serializeJson(doc, saidajson); //Envia os dados recebidos para um string json
+  
+    Serial.println("New Client.");          // print a message out the serial port
+    String currentLine = "";                // make a String to hold incoming data from the client
+    while (client.connected()) {            // loop while the client's connected
+      if (client.available()) {             // if there's bytes to read from the client,
+        char c = client.read();             // read a byte, then
+        Serial.write(c);                    // print it out the serial monitor
+        if (c == '\n') {                    // if the byte is a newline character
+          // if the current line is blank, you got two newline characters in a row.
+          // that's the end of the client HTTP request, so send a response:
+          if (currentLine.length() == 0) {
+            // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
+            // and a content-type so the client knows what's coming, then a blank line:
+            client.println("HTTP/1.1 200 OK");
+            client.println("Content-Type: application/json; charset=utf-8");
+            client.println();
 
-String Printzero(byte a) {
-  if (a >= 10) {
-    return (String)a + "";
-  }
-  else {
-    return "0" + (String)a;
-  }
-}
-
-String NTP_Status_Desc (byte timestatus){
-  //timeStatus() retorna: 0 timeNotSet, 1 timeNeedsSync ou 2 timeSet
-  switch (timestatus) {
-    case 0:
-      return "TimeNotSet";
-      break;
-    case 1:
-      return "timeNeedsSync";
-      break;
-    default:
-      return "timeSet";
-      break;
-  }
-}
-
-/*-------- NTP code ----------*/
-const int NTP_PACKET_SIZE = 48; // NTP time is in the first 48 bytes of message
-byte packetBuffer[NTP_PACKET_SIZE]; //buffer to hold incoming & outgoing packets
-
-time_t getNtpTime()
-{
-  while (Udp.parsePacket() > 0) ; // discard any previously received packets
-  Serial.println(F("Transmit NTP Request"));
-  sendNTPpacket(timeServer);
-  Serial.println(timeServer);
-  uint32_t beginWait = millis();
-  while (millis() - beginWait < 1500) {
-    int size = Udp.parsePacket();
-    if (size >= NTP_PACKET_SIZE) {
-      Serial.println(F("Receive NTP Response"));
-      Udp.read(packetBuffer, NTP_PACKET_SIZE);  // read packet into the buffer
-      unsigned long secsSince1900;
-      // convert four bytes starting at location 40 to a long integer
-      secsSince1900 =  (unsigned long)packetBuffer[40] << 24;
-      secsSince1900 |= (unsigned long)packetBuffer[41] << 16;
-      secsSince1900 |= (unsigned long)packetBuffer[42] << 8;
-      secsSince1900 |= (unsigned long)packetBuffer[43];
-      return secsSince1900 - 2208988800UL + timeZone * SECS_PER_HOUR;
-    }
-  }
-  Serial.println(F("No NTP Response :-("));
-  return 0; // return 0 if unable to get the time
-}
-
-void sendNTPpacket(IPAddress &address) // send an NTP request to the time server at the given address
-{
-  // set all bytes in the buffer to 0
-  memset(packetBuffer, 0, NTP_PACKET_SIZE);
-  // Initialize values needed to form NTP request
-  // (see URL above for details on the packets)
-  packetBuffer[0] = 0b11100011;   // LI, Version, Mode
-  packetBuffer[1] = 0;     // Stratum, or type of clock
-  packetBuffer[2] = 6;     // Polling Interval
-  packetBuffer[3] = 0xEC;  // Peer Clock Precision
-  // 8 bytes of zero for Root Delay & Root Dispersion
-  packetBuffer[12]  = 49;
-  packetBuffer[13]  = 0x4E;
-  packetBuffer[14]  = 49;
-  packetBuffer[15]  = 52;
-  // all NTP fields have been given values, now
-  // you can send a packet requesting a timestamp:
-  Udp.beginPacket(address, 123); //NTP requests are to port 123
-  Udp.write(packetBuffer, NTP_PACKET_SIZE);
-  Udp.endPacket();
-
-}
-
-void Uptime_Calc(){ 
-  //Calculo SystemUptime
-  if ( millis() - prevMillis > 1000 ) {
-    // increment previous milliseconds
-    prevMillis += 1000;
-    // increment up-time counter
-    UpTime += 1;
-  }
-}
-
-
-void ServidorWeb () {
-  EthernetClient client = server.available();
-  if (client) {
-    Serial.println(F("new client"));
-    // an http request ends with a blank line
-    boolean currentLineIsBlank = true;
-    while (client.connected()) {
-      if (client.available()) {
-        char c = client.read();
-        if (c == '\n' && currentLineIsBlank) {
-          // send a standard http response header
-          client.println(F("HTTP/1.1 200 OK"));
-          client.println(F("Content-Type: application/json; charset=utf-8"));
-          client.println(F("Connection: close"));  // the connection will be closed after completion of the response
-          //client.println(F("Refresh: 15"));        // refresh the page automatically every 15 sec
-          client.println(F(""));           
-          client.print(F("{\"info\":{\"dispositivo\":{\"nome\":\""));
-          client.print(dispositivo_nome);
-          client.print(F("\",\"local\":\""));            
-          client.print(dispositivo_local);
-          client.print(F("\",\"versao\":\""));
-          client.print(dispositivo_versao);
-          client.print(F("\",\"uptime\":"));
-          client.print(UpTime);
-          client.print(F("},\"ntp\": {\"server\": \""));
-          client.print(timeServer);
-          client.print(F("\",\"status\":"));
-          client.print(timeStatus());
-          client.print(F(",\"status_desc\":\""));
-          client.print(NTP_Status_Desc(timeStatus()));
-          client.print(F("\",\"ultima_sincr\":"));
-          client.print(ultima_sincronizacao + 3600 * (abs(timeZone)));    //Devolve a hora em UTC
-          client.print(F(",\"datahora\":\""));
-          client.print(digitalClockDisplayStringData(weekday(), day(), month(), year()) + " | " + digitalClockDisplayStringHora(hour(), minute(), second()));
-          client.print(F("\",\"unixtime\":"));
-          client.print(now() + 3600 * (abs(timeZone)));                   //Devolve a hora em UTC
-          client.print(F("},\"horarios_aula\":{\"dia_de_aula\":"));
-          client.print(DiadeAula());
-          client.print(F(",\"aula_atual\":{\"horario\":\""));
-          client.print(AulaStr(atualAula, 0));
-          client.print(F("\",\"duracao\":\""));
-          client.print(HorarioAulaStr(atualAula, 0));          
-          client.print(F("\"},\"proxima_aula\":{\"horario\":\""));
-          client.print(AulaStr(proxAula, 1));
-          client.print(F("\",\"duracao\":\""));
-          client.print(HorarioAulaStr(proxAula, 1));
-          client.print(F("\",\"tempo_prox_aula\":\""));
-          client.print(Printzero(tmRestante.Hour) + ":" + Printzero(tmRestante.Minute) + ":" + Printzero(tmRestante.Second));
-          client.print(F("\"}}}}"));
-          break;
+            // the content of the HTTP response follows the header:
+            client.print(saidajson);
+            // The HTTP response ends with another blank line:
+            client.println();
+            // break out of the while loop:
+            break;
+          } else {    // if you got a newline, then clear currentLine:
+            currentLine = "";
+          }
+        } else if (c != '\r') {  // if you got anything else but a carriage return character,
+          currentLine += c;      // add it to the end of the currentLine
         }
-        if (c == '\n') {
-          // you're starting a new line
-          currentLineIsBlank = true;
-        } else if (c != '\r') {
-          // you've gotten a character on the current line
-          currentLineIsBlank = false;
-        }
+
+        
       }
     }
     // give the web browser time to receive the data
     delay(1);
     // close the connection:
-    client.stop();
-    Serial.println(F("client disconnected"));
-  }
 
+    client.stop();
+    Serial.println("Client Disconnected.");
+  }
+}
+
+void printLocalTime(){
+  Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S"); 
 }
