@@ -1,4 +1,36 @@
-unsigned long getTime() {
+void PreencheJson(){
+  char datacompleta[100];
+
+  strftime(datacompleta,80, "%A, %B %d %Y %H:%M:%S", &timeinfo);
+  doc["projeto"]["nome"]       = "IF-Toque";
+  doc["projeto"]["versao"]     = "v2.5.1";
+  doc["projeto"]["inicio"]     = "Nov/2017";
+  doc["projeto"]["compilacao"] = "30/09/2022";
+  doc["sistema"]["ip"]   = WiFi.localIP();
+  doc["sistema"]["mac"]  = WiFi.macAddress();
+  doc["sistema"]["rssi"] = WiFi.RSSI();
+  doc["sistema"]["uptime"] = locUpTime;
+  doc["iftoque"]["datahora"] = datacompleta;  
+  doc["iftoque"]["unixtime"] = getTime();
+  doc["ntp"]["ntp_server"] = ntpServer;
+  doc["ntp"]["sincronizacao"] = last_ntp_update;
+  doc["horarios_aula"]["dia_aula"] = DiadeAula ();
+  doc["horarios_aula"]["aula_atual"]["horario"]["num"] = AulaAtualNum();
+  doc["horarios_aula"]["aula_atual"]["horario"]["horario"] = HorarioAulaStr(atualAula, 0);
+  doc["horarios_aula"]["aula_atual"]["turno"]["num"] = Turno();
+  doc["horarios_aula"]["aula_atual"]["turno"]["turno"] = TurnoStr();
+  doc["horarios_aula"]["prox_aula"]["horario"]["num"] = ProximaAula(atualAula);
+  doc["horarios_aula"]["prox_aula"]["horario"]["horario"] = HorarioAulaStr(proxAula, 0);
+  doc["horarios_aula"]["prox_aula"]["tempo_restante"]["tempo"] = String(tmRestante.Hour) + "h " + String(tmRestante.Minute) + "m " + String(tmRestante.Second) + "s";
+  doc["horarios_aula"]["prox_aula"]["tempo_restante"]["unixtime"] = TempoProxAula();
+  doc["data_hora"]["dia_semana_data"] = diaSemana(timeinfo.tm_wday+1) + ", " + Printzero(timeinfo.tm_mday) + "/" + Printzero(timeinfo.tm_mon+1) + "/" + String(1900 + timeinfo.tm_year);
+  doc["data_hora"]["dia_semana_str"] = diaSemana(timeinfo.tm_wday+1);
+  doc["data_hora"]["dia_semana_int"] = timeinfo.tm_wday+1;
+  doc["data_hora"]["data"] = Printzero(timeinfo.tm_mday) + "/" + Printzero(timeinfo.tm_mon+1) + "/" + String(1900 + timeinfo.tm_year);
+  doc["data_hora"]["hora"] = Printzero(timeinfo.tm_hour) + ":" + Printzero(timeinfo.tm_min) + ":" + Printzero(timeinfo.tm_sec);
+}
+
+unsigned long getTime() { // Function that gets current epoch time
   if (!getLocalTime(&timeinfo)) {
     //Serial.println("Failed to obtain time");
     return(0);
@@ -12,7 +44,7 @@ void timeSyncCallback(struct timeval *tv)
   Serial.println("\n----Time Sync-----");
   Serial.println(tv->tv_sec);
   Serial.println(ctime(&tv->tv_sec));
-  doc["ntp"]["ultima_sincr_unixtime"]  = tv->tv_sec;
+  last_ntp_update  = tv->tv_sec;
 }
 
 void Uptime(){
@@ -23,6 +55,7 @@ void Uptime(){
      Serial.print(WiFi.localIP());
      Serial.print(" | ");
      Serial.println(WiFi.macAddress());
+
   }
 }
 
@@ -102,8 +135,10 @@ boolean DiadeAula () {
 }
 
 time_t HoraEpoch(byte hh, byte mm) {
+  //https://cplusplus.com/reference/ctime/mktime/
   time_t rawtime;
   struct tm *infodatahora;
+  
   time(&rawtime);
   infodatahora = localtime(&rawtime);
   infodatahora -> tm_hour = hh;
@@ -138,6 +173,8 @@ void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info){
   WiFi.begin(ssid, password);
 }
 
+
+
 String diaSemana(byte dia) {
   String str[] = {"-", "Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"};
   return str[dia];
@@ -155,7 +192,7 @@ String Printzero(byte a) {
 void Imprime_Info_DataHora_Serial(){
   if (getTime() != prevDisplay) { //update the display only if time has changed
       prevDisplay = getTime();
-      printLocalTime();
+      Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S"); 
       Serial.print(F("Aula atual: "));
       Serial.print(AulaAtualNum());
       Serial.print(F(" | "));
@@ -184,7 +221,6 @@ byte AulaAtualNum () {
   // Retorna 0 caso fora de horario de aula e 10 ou 20 para indicar primeiro ou segundo intervalo
   unsigned long hora = getTime();
 
- 
   byte aula = 0;
   if (turno == 1) {        //Manhã: hora entre (00:00:00 e 12:00:00)
     if (hora >= HoraEpoch(7, 0)) { //Turno matutino (7:00 ~ 11:59)
@@ -300,7 +336,6 @@ byte ProximaAula (byte aula_atual) {
   }
 
   proxAula = proxaula;
-
   return proxAula;
 }
 
@@ -385,11 +420,8 @@ String HorarioAulaStr (byte aula, byte opcao) {
       }
     }
   }
-  
   return s;
-
 }
-
 
 byte Turno() {
   if (timeinfo.tm_hour >= 12) {
@@ -497,39 +529,16 @@ time_t TempoProxAula() {
 
 }
 
-void ServidorWeb(){
-  char datacompleta[100];
-  
+void ServidorWeb(){   
   String saidajson = "";
   WiFiClient client = server.available();   // listen for incoming clients
 
-  if (client) {                             // if you get a client,
-    doc["sistema"]["rssi"] = WiFi.RSSI();
-    doc["sistema"]["uptime"] = locUpTime;
-    strftime(datacompleta,80, "%A, %B %d %Y %H:%M:%S", &timeinfo);
-    doc["ntp"]["datahora"] = datacompleta;
-    doc["ntp"]["unixtime"] = getTime();
-    doc["horarios_aula"]["dia_aula"] = DiadeAula ();
-    doc["horarios_aula"]["aula_atual"]["num"] = AulaAtualNum();
-    doc["horarios_aula"]["aula_atual"]["horario"] = HorarioAulaStr(atualAula, 0);
-    doc["horarios_aula"]["aula_atual"]["turno"] = Turno();
-    doc["horarios_aula"]["aula_atual"]["turno_str"] = TurnoStr();
-    doc["horarios_aula"]["prox_aula"]["num"] = ProximaAula(atualAula);
-    doc["horarios_aula"]["prox_aula"]["horario"] = HorarioAulaStr(proxAula, 0);
-    doc["horarios_aula"]["prox_aula"]["tempo_restante"]["str"] = String(tmRestante.Hour) + "h " + String(tmRestante.Minute) + "m " + String(tmRestante.Second) + "s";
-    doc["horarios_aula"]["prox_aula"]["tempo_restante"]["unixtime"] = TempoProxAula();
-
-    doc["data_hora"]["dia_semana_data"] = diaSemana(timeinfo.tm_wday+1) + ", " + Printzero(timeinfo.tm_mday) + "/" + Printzero(timeinfo.tm_mon+1) + "/" + String(1900 + timeinfo.tm_year);
-    doc["data_hora"]["dia_semana_str"] = diaSemana(timeinfo.tm_wday+1);
-    doc["data_hora"]["dia_semana_int"] = timeinfo.tm_wday+1;
-    doc["data_hora"]["data"] = Printzero(timeinfo.tm_mday) + "/" + Printzero(timeinfo.tm_mon+1) + "/" + String(1900 + timeinfo.tm_year);
-    doc["data_hora"]["hora"] = Printzero(timeinfo.tm_hour) + ":" + Printzero(timeinfo.tm_min) + ":" + Printzero(timeinfo.tm_sec);
-
-    delay(5);
-    
+  if (client) {  
+    PreencheJson();
+    delay(5);  
     serializeJson(doc, saidajson); //Envia os dados recebidos para um string json
   
-    Serial.println("New Client.");          // print a message out the serial port
+    Serial.println("New Client.");           // print a message out the serial port
     String currentLine = "";                // make a String to hold incoming data from the client
     while (client.connected()) {            // loop while the client's connected
       if (client.available()) {             // if there's bytes to read from the client,
@@ -544,7 +553,6 @@ void ServidorWeb(){
             client.println("HTTP/1.1 200 OK");
             client.println("Content-Type: application/json; charset=utf-8");
             client.println();
-
             // the content of the HTTP response follows the header:
             client.print(saidajson);
             // The HTTP response ends with another blank line:
@@ -556,9 +564,7 @@ void ServidorWeb(){
           }
         } else if (c != '\r') {  // if you got anything else but a carriage return character,
           currentLine += c;      // add it to the end of the currentLine
-        }
-
-        
+        }      
       }
     }
     // give the web browser time to receive the data
@@ -567,9 +573,6 @@ void ServidorWeb(){
 
     client.stop();
     Serial.println("Client Disconnected.");
+    doc.clear();
   }
-}
-
-void printLocalTime(){
-  Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S"); 
 }
