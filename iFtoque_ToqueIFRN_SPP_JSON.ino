@@ -1,6 +1,6 @@
 /*
   ACIONADOR TOQUE ESCOLAR ELETRÔNICO AUTOMÁTICO IFRN-SPP
-  Funções e bibliotecas de apoio e referência
+  Funções e bibliotecas de apoio
      Função timeToStudy: https://github.com/dvcirilo/alarme_ifrn
      Stuct tm:           https://cplusplus.com/reference/ctime/tm/
      Esp32 NTP client:   https://randomnerdtutorials.com/esp32-date-time-ntp-client-server-arduino/
@@ -16,7 +16,7 @@
 #include <WiFi.h>
 #include "time.h"
 #include <TimeLib.h>
-#include <ArduinoJson.h> //https://arduinojson.org
+#include <ArduinoJson.h>
 
 #define SINETA 26 //mesma porta do led interno
 #define SINETA_TESTE 27 //SEMPRE ON
@@ -26,7 +26,7 @@
 // Variáveis Globais:
 // Wifi:
 const char* ssid     = "SSID";
-const char* password = "Senha wifi";
+const char* password = "Senha";
 
 // NTP
 const char* ntpServer = "pool.ntp.org";
@@ -52,7 +52,8 @@ tmElements_t tmRestante;                 // Estrutura que armazena (hh, mm, ss) 
 time_t prevDisplay = 0;                 // Controla para só exibir da data/hora no display/serial caso a hora atual seja diferente da atual
 
 
-DynamicJsonDocument doc(1000);
+const size_t capacity = JSON_OBJECT_SIZE(1) + 1024;
+StaticJsonDocument<capacity> doc;
 WiFiServer server(80);
 
 /* ---------Protótipos das funções: -------------------*/
@@ -68,7 +69,7 @@ void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info);  //Funç�
 void    Imprime_Info_DataHora_Serial();
 String  diaSemana(byte dia);                                    // Recebe um numero (1-7) e retorna dia da semana em string (-,Domingo, Segunda, (...), Sabado)
 String  Printzero(byte a);                                      // Recebe um número
-void    printLocalTime();                                        // Exibe a data em diversos formatos
+void PreencheJson();                                            // Cria a estrutura em json com as informações a serem exibidas via http
 
 /*    Exibicao de informações da aula atual */
 byte    AulaAtualNum ();                                        // Retorna um numero correspondente a aula atual: (1 a 6) ou (0, 10, 20 ou 30)
@@ -88,7 +89,6 @@ time_t  HoraEpoch (byte hh, byte mm);                           // Converte uma 
 void    ServidorWeb  ();                                        // Monta um servidor web, exibe as informações de hora caso a hora tenha sido obtida
 void    Uptime();                                               // Calcula o tempo que o dispositivo se encontra ligado
 void    timeSyncCallback(struct timeval *tv);                   // Callback para obter momento de sincronização NTP
-
 
 void setup(){  
   pinMode(LED_AZUL_STATUS,OUTPUT);
@@ -117,24 +117,10 @@ void setup(){
 
   delay(4000);
   server.begin();
-
-  doc["projeto"]; 
-
-  doc["projeto"]["nome"]       = "IF-Toque";
-  doc["projeto"]["versao"]     = "v2.5";
-  doc["projeto"]["inicio"]     = "Nov/2017";
-  doc["projeto"]["compilacao"] = "27/09/2022";
-  
-  doc["sistema"];
-  doc["sistema"]["mac"]  = WiFi.macAddress();
-  doc["sistema"]["ip"]   = WiFi.localIP();
-
-  doc["ntp"]["ntp_server"] = ntpServer;
-  doc["ntp"]["ultima_sincr_unixtime"] = 0;
   
   // Init and get the time
   configTime(gmtOffset*3600, daylightOffset_sec, ntpServer);
-  printLocalTime();
+
 }
 
 void loop(){
