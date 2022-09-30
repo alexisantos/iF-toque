@@ -8,11 +8,12 @@ O servidor web é utilizado como gerenciamento passivo do dispositivo para acomp
 **Utilizado:**
 * ESP32 com 30 pinos
 * Módulo de Rele 5v
+* Fonte Ajustável para Protoboard-MB102
 * Servidor NTP (pode ser via Internet ou local)
 
 ![Diagrama de funcionamento](iFtoque-ToqueIFRN-SPP-DiagramaFuncionamento2.png)
 
-**Retorno de requisição http**
+### Retorno de requisição http
 
 Uma requisição http irá retornar um documento json
 ```
@@ -69,12 +70,11 @@ Uma requisição http irá retornar um documento json
   }
 }
 ```
-Toque-IFRN-NTP_draw_bb.png
 
 
-## Sugestão de prototipagem
+### Sugestão de prototipagem
 ![Sugestão de prototipagem](Toque-IFRN-NTP_draw_bb.png)
 
-## Exibição em grafana
+### Exibição dos dados
 Os dados json podem ser utilizados para exibição em outras plataformas.
 ![Zabbix-Toque com Zabbix/Grafana](iFToque-Grafana-Integracao.png)
