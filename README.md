@@ -21,7 +21,8 @@ O servidor web é utilizado como gerenciamento passivo do dispositivo para acomp
 ### Retorno de requisição http
 
 Uma requisição http irá retornar um documento json
-```
+
+```javascript
 {
   "projeto": {
     "nome": "IF-Toque",
@@ -80,13 +81,14 @@ Uma requisição http irá retornar um documento json
 ### Sugestão de prototipagem
 Caso seja utilizado a fonte Ajustável HW-131 pode ser utilizado uma fonte de 7-12v. Caso não esteja disponível pode-se utilizar uma fonte 5V direto na porta VIN da ESP32 e no relé 5V.
 
-### Sugestão de prototipagem
 ![Sugestão de prototipagem](Toque-IFRN-NTP_draw_bb.png)
 
 ### Foto do projeto implantado
 Led interno azul (pin2) foi configurado para ficar aceso apenas se o equipamento foi capaz de obter a hora. O buzzer é utilizado apenas para validação, ele é opcional.
+
 ![Projeto utilizando esp32, wifi e NTP](iFtoque-ToqueIFRN-SPP-v2.5-imagem1.jpg)
 
 ### Exibição dos dados
 Os dados json podem ser utilizados para exibição em outras plataformas.
+
 ![Zabbix-Toque com Zabbix/Grafana](iFToque-Grafana-Integracao.png)
