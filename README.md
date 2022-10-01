@@ -1,11 +1,13 @@
 # iF-toque
-Sistema para controle de toque escolar (sineta/sirene) baseado em esp32 com uso de rele com atualização de hora pela rede através de protocolo NTP.
+Sistema para controle de toque escolar (campainha, sineta, sinal, sirene) baseado em esp32 com uso de relé com atualização de hora pela rede através de protocolo NTP (Network Time Protocol).
 
-Os arquivos .ino devem ser colocados no mesmo diretório.
+O iF-Toque é uma atualização do projeto [alarme_ifrn](https://github.com/dvcirilo/alarme_ifrn) desenvolvido por [dvcirilo](https://github.com/dvcirilo). Compõe o código fonte os arquivos .ino que foram compilados com arduino IDE versão 2.0. Os arquivos .ino devem ser colocados no mesmo diretório para a compilação ocorrer corretamente.
 
-As horas dos toques ficam no código fonte na função timeToStudy() e são separadas por toque longo ou toque curto. O toque curto é utilizado quando não há intervalos entre as aulas e dura por padrão 3s. O toque longo (horário do inicio ou fim do intervalo, inicio de turno, etc) dura por padrão 7s. Feriados fixos estão definos na função DiadeAula () que retorna para timeToStudy() se o toque deve ser acionado ou não.
+As horas dos acionamentos dos toques de sinal estão armazenadas no código fonte na função timeToStudy() e são separadas por toque longo ou toque curto. O toque curto  é aplicado quando entre as aulas e dura por padrão 3s. O toque longo (horário do inicio ou fim do intervalo, inicio de turno, etc) dura por padrão 7s. Feriados fixos estão definos na função DiadeAula() que retorna para timeToStudy() se o toque deve ser acionado ou não. Esses valores podem ser modificados pela edição das variáveis tempoCurto e tempoLongo.
 
-O servidor web é utilizado como gerenciamento passivo do dispositivo para acompanhar se a hora do dispositivo está correta assim como para acompanhar: horário de aula atual, próxima aula, tempo para próxima aula, data/hora atual, uptime e data/hora atual no formato unix epoch time. Uma requisição http no dispositivo irá retornar um documento em formato aberto json. Outras funções desenvolvidas são puramente visuais para controle e monitoramento via json.
+Ao inicializar, o Esp32 irá tentar ajudar a hora a partir de um servidor NTP configurado na variável "ntpServer". Uma vez definida a hora, o iF-Toque tentará novas sincronizações com "ntpServer" a cada 1h para que a hora sempre permaneça atualizada. A cada sincronização de hora, o horário dessa sincronização em Unixepochtime será armazenado em last_ntp_update. Esse armazenamento é voltado para controle externo de gestão (monitoramento) e está definido na função timeSyncCallback().
+
+O servidor web é utilizado como gerenciamento passivo do dispositivo para acompanhar se a hora do dispositivo está correta assim como para acompanhar: horário de aula atual, próxima aula, tempo para próxima aula, data/hora atual, uptime e data/hora atual no formato unix epoch time. Uma requisição http no dispositivo irá retornar um documento em formato aberto json com o uso da biblioteca ArduinoJson. Outras funções desenvolvidas são puramente visuais para controle e monitoramento via json.
 
 **Utilizado:**
 * ESP32 com 30 pinos
