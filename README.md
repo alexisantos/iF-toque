@@ -82,6 +82,7 @@ Caso seja utilizado a fonte Ajustável HW-131 pode ser utilizado uma fonte de 7-
 ![Sugestão de prototipagem](Toque-IFRN-NTP_draw_bb.png)
 
 ### Foto do projeto implantado
+Led interno azul (pin2) foi configurado para ficar aceso apenas se o equipamento foi capaz de obter a hora. O buzzer é utilizado apenas para validação, ele é opcional.
 ![Projeto utilizando esp32, wifi e NTP](iFtoque-ToqueIFRN-SPP-v2.5-imagem1.jpg)
 
 ### Exibição dos dados
