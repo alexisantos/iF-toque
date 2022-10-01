@@ -1,6 +1,8 @@
 # iF-toque
 Sistema para controle de toque escolar (sineta/sirene) baseado em esp32 com uso de rele com atualização de hora pela rede através de protocolo NTP.
 
+Os arquivos .ino devem ser colocados no mesmo diretório.
+
 As horas dos toques ficam no código fonte na função timeToStudy() e são separadas por toque longo ou toque curto. O toque curto é utilizado quando não há intervalos entre as aulas e dura por padrão 3s. O toque longo (horário do inicio ou fim do intervalo, inicio de turno, etc) dura por padrão 7s. Feriados fixos estão definos na função DiadeAula () que retorna para timeToStudy() se o toque deve ser acionado ou não.
 
 O servidor web é utilizado como gerenciamento passivo do dispositivo para acompanhar se a hora do dispositivo está correta assim como para acompanhar: horário de aula atual, próxima aula, tempo para próxima aula, data/hora atual, uptime e data/hora atual no formato unix epoch time. Uma requisição http no dispositivo irá retornar um documento em formato aberto json. Outras funções desenvolvidas são puramente visuais para controle e monitoramento via json.
@@ -76,7 +78,11 @@ Uma requisição http irá retornar um documento json
 ### Sugestão de prototipagem
 Caso seja utilizado a fonte Ajustável HW-131 pode ser utilizado uma fonte de 7-12v. Caso não esteja disponível pode-se utilizar uma fonte 5V direto na porta VIN da ESP32 e no relé 5V.
 
+### Sugestão de prototipagem
 ![Sugestão de prototipagem](Toque-IFRN-NTP_draw_bb.png)
+
+### Foto do projeto implantado
+![Projeto utilizando esp32, wifi e NTP](iFtoque-ToqueIFRN-SPP-v2.5-imagem1.jpg)
 
 ### Exibição dos dados
 Os dados json podem ser utilizados para exibição em outras plataformas.
