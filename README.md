@@ -7,8 +7,9 @@ O servidor web é utilizado como gerenciamento passivo do dispositivo para acomp
 
 **Utilizado:**
 * ESP32 com 30 pinos
-* Módulo de Rele 5v
-* Fonte Ajustável para Protoboard-MB102
+* Módulo de Rele 5v (um canal ou dois canais)
+* Fonte Ajustável para Protoboard HW-131 
+* Protoboard 400 Pontos
 * Servidor NTP (pode ser via Internet ou local)
 
 ![Diagrama de funcionamento](iFtoque-ToqueIFRN-SPP-DiagramaFuncionamento2.png)
@@ -73,6 +74,8 @@ Uma requisição http irá retornar um documento json
 
 
 ### Sugestão de prototipagem
+Caso seja utilizado a fonte Ajustável HW-131 pode ser utilizado uma fonte de 7-12v. Caso não esteja disponível pode-se utilizar uma fonte 5V direto na porta VIN da ESP32 e no relé 5V.
+
 ![Sugestão de prototipagem](Toque-IFRN-NTP_draw_bb.png)
 
 ### Exibição dos dados
