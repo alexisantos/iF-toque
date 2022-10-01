@@ -22,7 +22,7 @@ O servidor web é utilizado como gerenciamento passivo do dispositivo para acomp
 
 Uma requisição http irá retornar um documento json
 
-```javascript
+```json
 {
   "projeto": {
     "nome": "IF-Toque",
